@@ -14,11 +14,10 @@ jobs:
       - name: Download LPC-Pro JAR artifact from private repo
         uses: actions/download-artifact@v4
         with:
-          name: ${{ github.event.client_payload.artifact_name }}
+          name: lpcpro-jar
           path: ./plugins
           github-token: ${{ secrets.LPCPRO_REPO_PAT }}
           repository: wikmor/lpcpro
-          run-id: ${{ github.event.client_payload.build_run_id }}
 
       - name: List plugin jar
         run: ls -lh plugins/
