@@ -1,0 +1,21 @@
+name: E2E Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download LPC-Pro JAR artifact from private repo
+        uses: actions/download-artifact@v4
+        with:
+          name: lpcpro-jar
+          path: ./plugins
+          github-token: ${{ secrets.PRIVATE_REPO_PAT }}
+          repository: wikmor/lpcpro
+
+      - name: List plugin jar
+        run: ls -lh plugins/
