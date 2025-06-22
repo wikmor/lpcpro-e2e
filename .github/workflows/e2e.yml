@@ -1,7 +1,8 @@
 name: E2E Tests
 
 on:
-  workflow_dispatch:
+  repository_dispatch:
+    types: [run-e2e]
 
 jobs:
   e2e-test:
@@ -12,10 +13,11 @@ jobs:
       - name: Download LPC-Pro JAR artifact from private repo
         uses: actions/download-artifact@v4
         with:
-          name: lpcpro-jar
+          name: ${{ github.event.client_payload.artifact_name }}
           path: ./plugins
           github-token: ${{ secrets.LPCPRO_REPO_PAT }}
           repository: wikmor/lpcpro
+          run-id: ${{ github.event.client_payload.build_run_id }}
 
       - name: List plugin jar
         run: ls -lh plugins/
