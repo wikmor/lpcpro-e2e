@@ -16,7 +16,7 @@ jobs:
         with:
           name: lpcpro-jar
           path: ./plugins
-          github-token: ${{ secrets.LPCPRO_REPO_PAT }}
+          github-token: ${{ secrets.LPCPRO_E2E_REPO_PAT }}
           repository: wikmor/lpcpro
 
       - name: List plugin jar
