@@ -1,0 +1,20 @@
+# This is the receiver private message format.
+#
+# Wiki: https://lpcpro.wikmor.com/features/chat-format
+
+part-separator: " "
+
+# Parts that make up this private message format.
+from-to:
+  text: "<#6cc324>[&f{sender_name} <#6cc324>➥ &fme<#6cc324>]"
+  hover:
+    - "&8%server_time_yyyy-MM-dd HH:mm:ss%"
+    - "{sender_name} <#6cc324>sent this message to &fyou<#6cc324>."
+    - ""
+    - "<#6cc324>Click to reply!"
+  suggest: "/msg {sender_name} "
+
+message:
+  text: "{message}"
+  hover: "&eClick to ignore all {sender_name}'s messages!"
+  run: "/ignore {sender_name}"

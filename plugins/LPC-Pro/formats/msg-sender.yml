@@ -1,0 +1,13 @@
+# This is the sender private message format.
+#
+# Wiki: https://lpcpro.wikmor.com/features/chat-format
+
+# Parts that make up this private message format.
+msg:
+  text: "<#6cc324>[&fme <#6cc324>➥ &f{receiver_name}<#6cc324>] &f{message}"
+  hover:
+    - "&8%server_time_yyyy-MM-dd HH:mm:ss%"
+    - "You <#6cc324>sent this message to &f{receiver_name}<#6cc324>."
+    - ""
+    - "<#6cc324>Click to reply!"
+  suggest: "/msg {receiver_name} "

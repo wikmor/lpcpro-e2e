@@ -1,0 +1,27 @@
+# This is the default/global/fallback format.
+#
+# Wiki: https://lpcpro.wikmor.com/features/chat-format
+
+# Separator placed between each part of this format.
+part-separator: " "
+
+# Parts that make up this chat format.
+player:
+  text: "{prefix}{name}"
+  hover:
+    - "{prefix}{name}"
+    - "&8Joined %player_first_join_date%"
+    - ""
+    - "&7Hours played: &f%statistic_hours_played%h"
+    - "&7Current world: &f{world}"
+    - ""
+    - "&aClick to send a private message!"
+  suggest: "/msg {name} "
+
+divider:
+  text: "&7➥"
+
+message:
+  text: "{message}"
+  #hover: "&eClick to ignore all {name}'s messages!"
+  #run: "/ignore {name}"

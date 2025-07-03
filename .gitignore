@@ -1,3 +1,6 @@
 tests/__pycache__
 tests/.pytest_cache
 paper/*/paper-*-*.jar
+plugins/.paper-remapped/
+plugins/bStats/
+plugins/spark/

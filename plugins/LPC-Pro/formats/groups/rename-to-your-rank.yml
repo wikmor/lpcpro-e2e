@@ -1,0 +1,19 @@
+# This is an example of group format.
+#
+# Wiki: https://lpcpro.wikmor.com/features/chat-format
+
+# Separator placed between each part of this format.
+part-separator: " "
+
+# Parts that make up this group's chat format.
+prefix:
+  text: "&8[&3your-rank&8]"
+  hover: "&8[&3your-rank&8]"
+
+player:
+  text: "{name}"
+  hover: "&aClick to send a private message!"
+  suggest: "/msg {name} "
+
+message:
+  text: "&7➥ &r{message}"

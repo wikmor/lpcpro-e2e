@@ -1,0 +1,22 @@
+{
+  "plugin-prefix": "<#6cc324><bold>LPC ",
+  "command-no-console": "<red>Only players can use this command.",
+  "command-no-permission": "<red>You don't have permission to use this command.",
+  "command-reload-usage": "<red>Usage: /lpc reload",
+  "command-reload-formats": "<green>Reloaded `formats/` folder.",
+  "command-reload-messages": "<green>Reloaded `messages.yml` file.",
+  "command-msg-usage": "<red>Usage: /msg <player> <message>",
+  "command-msg-player-not-found": "<red>Player {target} not found.",
+  "command-msg-self": "<red>You cannot message yourself.",
+  "command-msg-no-reply": "<red>No one to reply to.",
+  "command-msg-reply-usage": "<red>Usage: /r <message>",
+  "command-msg-ignored": "<red>You cannot message {target} because they are ignoring you.",
+  "command-ignore-usage": "<red>Usage: /ignore <player>",
+  "command-ignore-bypass": "<red>You cannot ignore {target}.",
+  "command-ignore-self": "<red>You cannot ignore yourself.",
+  "command-ignore-already-ignoring": "<red>You are already ignoring {target}.",
+  "command-ignore-success": "<green>You are now ignoring {target}.",
+  "command-unignore-usage": "<red>Usage: /unignore <player>",
+  "command-unignore-not-ignoring": "<red>You are not ignoring {target}.",
+  "command-unignore-success": "<green>You are no longer ignoring {target}."
+}

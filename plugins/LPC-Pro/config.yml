@@ -1,0 +1,7 @@
+# LPC-Pro Main Configuration
+check-for-updates: true
+
+# After editing these settings, the server must be restarted for the changes to take effect.
+enable-private-messages: true
+# If private messages are enabled, ignoring messages will also be enabled, even if it is set to false.
+enable-ignore-messages: true
