@@ -35,7 +35,7 @@ jobs:
         run: ls -lh plugins/
 
       - name: Build server image
-        run: docker compose build paper_${{ matrix.version_underscore }}
+        run: docker compose build paper_${{ matrix.version_underscore }} --no-cache
       
       - name: Start server
         run: docker compose up -d paper_${{ matrix.version_underscore }}
