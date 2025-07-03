@@ -10,7 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: [1.16.5, 1.21.5]
+        include:
+          - version: 1.16.5
+            version_underscore: 1_16_5
+          - version: 1.21.5
+            version_underscore: 1_21_5
 
     env:
       VERSION: ${{ matrix.version }}
@@ -31,14 +35,13 @@ jobs:
         run: ls -lh plugins/
 
       - name: Build server image
-        run: docker compose build paper_${{ matrix.version//./_ }}
+        run: docker compose build paper_${{ matrix.version_underscore }}
       
       - name: Start server
-        run: docker compose up -d paper_${{ matrix.version//./_ }}
+        run: docker compose up -d paper_${{ matrix.version_underscore }}
       
       - name: Run tests
-        run: docker compose run --rm test_${{ matrix.version//./_ }}
+        run: docker compose run --rm test_${{ matrix.version_underscore }}
       
       - name: Stop server
-        run: docker compose stop paper_${{ matrix.version//./_ }}
-
+        run: docker compose stop paper_${{ matrix.version_underscore }}
