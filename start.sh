@@ -8,5 +8,8 @@ set -e
 # Accept EULA
 echo "eula=true" > eula.txt
 
+echo "📦 Listing /server/plugins inside container..."
+ls -lh /server/plugins
+
 # Run the server
 exec java -Xmx1G -jar server.jar --nogui
