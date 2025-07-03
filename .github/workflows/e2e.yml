@@ -6,23 +6,14 @@ on:
     types: [run-e2e-tests]
 
 jobs:
-  e2e-test:
+  test_1_16_5:
+    name: Test Paper 1.16.5
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - version: 1.16.5
-            version_underscore: 1_16_5
-          - version: 1.21.5
-            version_underscore: 1_21_5
-
-    env:
-      VERSION: ${{ matrix.version }}
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Download LPC-Pro JAR artifact from private repo
+      - name: Download plugin
         uses: dawidd6/action-download-artifact@v11
         with:
           github_token: ${{ secrets.LPCPRO_E2E_REPO_PAT }}
@@ -31,23 +22,34 @@ jobs:
           path: ./plugins
           repo: wikmor/lpcpro
 
-      - name: List plugin jar
-        run: ls -lh plugins/
+      - name: Start server & wait
+        run: |
+          docker compose up -d paper_1_16_5
+          ./scripts/wait-for-server.sh servers/1.16.5/logs/latest.log
 
-      - name: Build server image
-        run: docker compose build paper_${{ matrix.version_underscore }} --no-cache
-      
-      - name: Start server
-        run: docker compose up -d paper_${{ matrix.version_underscore }}
-
-      - name: Wait for server log
-        run: ./scripts/wait-for-server.sh servers/${{ matrix.version }}/logs/latest.log
-
-      - name: Print logs for debugging
-        run: cat servers/1.16.5/logs/latest.log || echo "Log not found"
-      
       - name: Run tests
-        run: docker compose run --rm test_${{ matrix.version_underscore }}
-      
-      - name: Stop server
-        run: docker compose stop paper_${{ matrix.version_underscore }}
+        run: docker compose run --rm test_1_16_5
+
+  test_1_21_5:
+    name: Test Paper 1.21.5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download plugin
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          github_token: ${{ secrets.LPCPRO_E2E_REPO_PAT }}
+          workflow: build.yml
+          name: lpcpro-jar
+          path: ./plugins
+          repo: wikmor/lpcpro
+
+      - name: Start server & wait
+        run: |
+          docker compose up -d paper_1_21_5
+          ./scripts/wait-for-server.sh servers/1.21.5/logs/latest.log
+
+      - name: Run tests
+        run: docker compose run --rm test_1_21_5
