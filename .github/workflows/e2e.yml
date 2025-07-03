@@ -39,6 +39,18 @@ jobs:
       
       - name: Start server
         run: docker compose up -d paper_${{ matrix.version_underscore }}
+
+      - name: Wait for server to start
+        run: |
+          echo "Waiting for Paper server logs..."
+          for i in {1..60}; do
+            if grep -q "Done (" servers/${{ matrix.version }}/logs/latest.log 2>/dev/null; then
+              echo "✅ Server ready."
+              break
+            fi
+            echo "⏳ Waiting... ($i)"
+            sleep 1
+          done
       
       - name: Run tests
         run: docker compose run --rm test_${{ matrix.version_underscore }}
