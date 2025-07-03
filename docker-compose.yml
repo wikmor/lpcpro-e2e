@@ -1,0 +1,66 @@
+services:
+  # ------------------------------------------------------------------ #
+  # Paper 1.16.5 server                                                #
+  # ------------------------------------------------------------------ #
+  paper_1_16_5:
+    # profiles: ["1.16.5"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAVA_VERSION: 16
+    volumes:
+      - ./servers/1.16.5:/server
+      - ./paper/1.16.5/paper-1.16.5.jar:/server/server.jar:ro
+      - ./plugins:/server/plugins:ro
+      - ./server.properties:/server/server.properties:ro
+    ports:
+      - "25567:25565"
+
+  # ------------------------------------------------------------------ #
+  # Paper 1.21.5 server                                                #
+  # ------------------------------------------------------------------ #
+  paper_1_21_5:
+    # profiles: ["1.21.5"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAVA_VERSION: 21
+    volumes:
+      - ./servers/1.21.5:/server
+      - ./paper/1.21.5/paper-1.21.5.jar:/server/server.jar:ro
+      - ./plugins:/server/plugins      # writable for Paper remapper
+      - ./server.properties:/server/server.properties:ro
+    ports:
+      - "25569:25565"
+
+  # ------------------------------------------------------------------ #
+  # Test container for 1.16.5                                          #
+  # ------------------------------------------------------------------ #
+  test_1_16_5:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      - paper_1_16_5
+    volumes:
+      - ./servers/1.16.5/logs:/logs:ro
+      - ./tests:/tests
+    environment:
+      - LOG_PATH=/logs/latest.log
+
+  # ------------------------------------------------------------------ #
+  # Test container for 1.21.5                                          #
+  # ------------------------------------------------------------------ #
+  test_1_21_5:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      - paper_1_21_5
+    volumes:
+      - ./servers/1.21.5/logs:/logs:ro
+      - ./tests:/tests
+    environment:
+      - LOG_PATH=/logs/latest.log
