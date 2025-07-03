@@ -8,6 +8,13 @@ on:
 jobs:
   e2e-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [1.16.5, 1.21.5]
+
+    env:
+      VERSION: ${{ matrix.version }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,3 +29,16 @@ jobs:
 
       - name: List plugin jar
         run: ls -lh plugins/
+
+      - name: Build server image
+        run: docker compose build paper_${{ matrix.version//./_ }}
+      
+      - name: Start server
+        run: docker compose up -d paper_${{ matrix.version//./_ }}
+      
+      - name: Run tests
+        run: docker compose run --rm test_${{ matrix.version//./_ }}
+      
+      - name: Stop server
+        run: docker compose stop paper_${{ matrix.version//./_ }}
+
