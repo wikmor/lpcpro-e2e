@@ -42,6 +42,9 @@ jobs:
 
       - name: Wait for server log
         run: ./scripts/wait-for-server.sh servers/${{ matrix.version }}/logs/latest.log
+
+      - name: Print logs for debugging
+        run: cat servers/1.16.5/logs/latest.log || echo "Log not found"
       
       - name: Run tests
         run: docker compose run --rm test_${{ matrix.version_underscore }}
