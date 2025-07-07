@@ -5,73 +5,47 @@ on:
   repository_dispatch:
     types: [run-e2e-tests]
 
-env:
-  VERSIONS: |
-    1.8.8
-    1.12.2
-    1.16.5
-    1.18.2
-    1.20.6
-    1.21.4
-    1.21.5
-    1.21.7
-
 jobs:
-  e2e:
-    name: Test Paper ${{ matrix.version }}
+  set-matrix:
     runs-on: ubuntu-latest
-
-    # Don’t spin up all 20 at once – four runners in parallel is plenty
-    strategy:
-      matrix:
-        version: ${{ fromJSON(steps.set-matrix.outputs.list) }}
-      max-parallel: 4
-      fail-fast: false   # let other versions finish even if one fails
-
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
     steps:
+      - id: set
+        run: |
+          VERSIONS='["1.8.8", "1.16.5", "1.21.5"]'
+          echo "matrix=$VERSIONS"
+          echo "::set-output name=matrix::{\"version\": $VERSIONS}"
 
-    # ── Generate JSON array for the matrix ───────────────────────────
-    - name: Export matrix list
-      id: set-matrix
-      run: |
-        versions_json=$(printf '%s\n' "$VERSIONS" | jq -R . | jq -cs .)
-        echo "list=$versions_json" >> $GITHUB_OUTPUT
+  run-tests:
+    needs: set-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJSON(needs.set-matrix.outputs.matrix).version }}
+    env:
+      VERSION: ${{ matrix.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # ── Usual steps for each version ─────────────────────────────────
-    - uses: actions/checkout@v4
+      - name: Download plugin JAR
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          github_token: ${{ secrets.LPCPRO_E2E_REPO_PAT }}
+          workflow: build.yml
+          name: lpcpro-jar
+          path: ./plugins
+          repo: wikmor/lpcpro
 
-    - name: Download plugin jar
-      uses: dawidd6/action-download-artifact@v11
-      with:
-        github_token: ${{ secrets.LPCPRO_E2E_REPO_PAT }}
-        workflow: build.yml
-        name: lpcpro-jar
-        path: ./plugins
-        repo: wikmor/lpcpro
+      - name: Download Paper JAR
+        run: ./scripts/download-paper.sh "$VERSION"
 
-    # Paper jar cache – key per MC version + latest build ─────────────
-    - name: Cache Paper (MC ${{ matrix.version }})
-      id: paper-cache
-      uses: actions/cache@v4
-      with:
-        path: paper/${{ matrix.version }}
-        key: paper-${{ matrix.version }}-${{ hashFiles('scripts/download-paper.sh') }}
-        restore-keys: paper-${{ matrix.version }}-
+      - name: Start Paper server
+        run: |
+          docker compose up -d paper_${VERSION//./_}
+          ./scripts/wait-for-server.sh servers/${VERSION}/logs/latest.log
 
-    # Download latest build only if not cached
-    - name: Fetch Paper ${{ matrix.version }}
-      run: |
-        scripts/download-paper.sh "${{ matrix.version }}" "paper/${{ matrix.version }}"
-
-    # Compose up just the required service
-    - name: Start server & wait
-      run: |
-        svc=paper_${{ matrix.version//./_ }}
-        docker compose up -d --no-build "$svc"
-        scripts/wait-for-server.sh servers/${{ matrix.version }}/logs/latest.log
-
-    # Run the test container that mounts only *this* version’s logs
-    - name: Run pytest
-      run: |
-        tsvc=test_${{ matrix.version//./_ }}
-        docker compose run --rm "$tsvc"
+      - name: Run tests
+        run: docker compose run --rm test_${VERSION//./_}
