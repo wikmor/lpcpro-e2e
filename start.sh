@@ -12,4 +12,4 @@ echo "📦 Listing /server/plugins inside container..."
 ls -lh /server/plugins
 
 # Run the server
-exec java -Xmx1G -jar server.jar --nogui
+exec java -Xmx1G -jar server.jar nogui
