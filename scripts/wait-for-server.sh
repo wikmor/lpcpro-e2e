@@ -16,4 +16,7 @@ for _ in {1..60}; do
 done
 
 echo "❌ Server did not start in time"
+echo "⚠️ Timed out. Dumping latest.log:"
+cat "$1" || echo "🚫 Log not found"
+
 exit 1
