@@ -5,51 +5,73 @@ on:
   repository_dispatch:
     types: [run-e2e-tests]
 
+env:
+  VERSIONS: |
+    1.8.8
+    1.12.2
+    1.16.5
+    1.18.2
+    1.20.6
+    1.21.4
+    1.21.5
+    1.21.7
+
 jobs:
-  test_1_16_5:
-    name: Test Paper 1.16.5
+  e2e:
+    name: Test Paper ${{ matrix.version }}
     runs-on: ubuntu-latest
+
+    # Don’t spin up all 20 at once – four runners in parallel is plenty
+    strategy:
+      matrix:
+        version: ${{ fromJSON(steps.set-matrix.outputs.list) }}
+      max-parallel: 4
+      fail-fast: false   # let other versions finish even if one fails
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Download plugin
-        uses: dawidd6/action-download-artifact@v11
-        with:
-          github_token: ${{ secrets.LPCPRO_E2E_REPO_PAT }}
-          workflow: build.yml
-          name: lpcpro-jar
-          path: ./plugins
-          repo: wikmor/lpcpro
+    # ── Generate JSON array for the matrix ───────────────────────────
+    - name: Export matrix list
+      id: set-matrix
+      run: |
+        versions_json=$(printf '%s\n' "$VERSIONS" | jq -R . | jq -cs .)
+        echo "list=$versions_json" >> $GITHUB_OUTPUT
 
-      - name: Start server & wait
-        run: |
-          docker compose up -d paper_1_16_5
-          ./scripts/wait-for-server.sh servers/1.16.5/logs/latest.log
+    # ── Usual steps for each version ─────────────────────────────────
+    - uses: actions/checkout@v4
 
-      - name: Run tests
-        run: docker compose run --rm test_1_16_5
+    - name: Download plugin jar
+      uses: dawidd6/action-download-artifact@v11
+      with:
+        github_token: ${{ secrets.LPCPRO_E2E_REPO_PAT }}
+        workflow: build.yml
+        name: lpcpro-jar
+        path: ./plugins
+        repo: wikmor/lpcpro
 
-  test_1_21_5:
-    name: Test Paper 1.21.5
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    # Paper jar cache – key per MC version + latest build ─────────────
+    - name: Cache Paper (MC ${{ matrix.version }})
+      id: paper-cache
+      uses: actions/cache@v4
+      with:
+        path: paper/${{ matrix.version }}
+        key: paper-${{ matrix.version }}-${{ hashFiles('scripts/download-paper.sh') }}
+        restore-keys: paper-${{ matrix.version }}-
 
-      - name: Download plugin
-        uses: dawidd6/action-download-artifact@v11
-        with:
-          github_token: ${{ secrets.LPCPRO_E2E_REPO_PAT }}
-          workflow: build.yml
-          name: lpcpro-jar
-          path: ./plugins
-          repo: wikmor/lpcpro
+    # Download latest build only if not cached
+    - name: Fetch Paper ${{ matrix.version }}
+      run: |
+        scripts/download-paper.sh "${{ matrix.version }}" "paper/${{ matrix.version }}"
 
-      - name: Start server & wait
-        run: |
-          docker compose up -d paper_1_21_5
-          ./scripts/wait-for-server.sh servers/1.21.5/logs/latest.log
+    # Compose up just the required service
+    - name: Start server & wait
+      run: |
+        svc=paper_${{ matrix.version//./_ }}
+        docker compose up -d --no-build "$svc"
+        scripts/wait-for-server.sh servers/${{ matrix.version }}/logs/latest.log
 
-      - name: Run tests
-        run: docker compose run --rm test_1_21_5
+    # Run the test container that mounts only *this* version’s logs
+    - name: Run pytest
+      run: |
+        tsvc=test_${{ matrix.version//./_ }}
+        docker compose run --rm "$tsvc"
