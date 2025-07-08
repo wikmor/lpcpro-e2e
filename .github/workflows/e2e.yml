@@ -27,25 +27,25 @@ jobs:
     env:
       VERSION: ${{ matrix.version }}
     steps:
-      - name: Checkout
+      - name: Copy repo files to host
         uses: actions/checkout@v4
 
-      - name: Download plugin JAR
+      - name: Download latest LPC-Pro
         uses: dawidd6/action-download-artifact@v11
         with:
           github_token: ${{ secrets.LPCPRO_E2E_REPO_PAT }}
-          workflow: build.yml
           name: lpcpro-jar
-          path: ./plugins
           repo: wikmor/lpcpro
+          workflow: build.yml
+          path: ./plugins
 
-      - name: Download Paper JAR
-        run: ./scripts/download-paper.sh "$VERSION"
-
-      - name: Debug plugin files on host
+      - name: Debug plugins on host
         run: ls -lh ./plugins
 
-      - name: Start Paper server
+      - name: Download Paper
+        run: ./scripts/download-paper.sh "$VERSION"
+
+      - name: Start Paper
         run: |
           docker compose up -d paper_${VERSION//./_}
           ./scripts/wait-for-server.sh servers/${VERSION}/logs/latest.log
