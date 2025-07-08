@@ -50,5 +50,8 @@ jobs:
           docker compose up -d paper_${VERSION//./_}
           ./scripts/wait-for-server.sh servers/${VERSION}/logs/latest.log
 
+      - name: Debug logs on host
+        run: cat servers/${VERSION}/logs/latest.log || echo "Log not found"
+
       - name: Run tests
         run: docker compose run --rm test_${VERSION//./_}
