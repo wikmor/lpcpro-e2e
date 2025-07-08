@@ -30,7 +30,7 @@ jobs:
       - name: Copy repo files to host
         uses: actions/checkout@v4
 
-      - name: Download latest LPC-Pro
+      - name: Download latest LPC-Pro plugin
         uses: dawidd6/action-download-artifact@v11
         with:
           github_token: ${{ secrets.LPCPRO_E2E_REPO_PAT }}
@@ -38,6 +38,9 @@ jobs:
           repo: wikmor/lpcpro
           workflow: build.yml
           path: ./plugins
+
+      - name: Download softdependency plugins
+        run: ./scripts/download-plugins.sh
 
       - name: Debug plugins on host
         run: ls -lh ./plugins
