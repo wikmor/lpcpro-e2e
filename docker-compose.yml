@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        JAVA_VERSION: 8
+        JAVA_VERSION: 11
     volumes:
       - ./servers/1.8.8:/server
       - ./paper/1.8.8/paper-1.8.8.jar:/server/server.jar:ro
