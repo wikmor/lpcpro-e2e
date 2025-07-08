@@ -11,7 +11,7 @@ services:
     volumes:
       - ./servers/1.8.8:/server
       - ./paper/1.8.8/paper-1.8.8.jar:/server/server.jar:ro
-      - ./plugins:/server/plugins:ro
+      # - ./plugins:/server/plugins:ro
       - ./server.properties:/server/server.properties:ro
     ports:
       - "25567:25565"
@@ -28,7 +28,7 @@ services:
     volumes:
       - ./servers/1.16.5:/server
       - ./paper/1.16.5/paper-1.16.5.jar:/server/server.jar:ro
-      - ./plugins:/server/plugins:ro
+      # - ./plugins:/server/plugins:ro
       - ./server.properties:/server/server.properties:ro
     ports:
       - "25567:25565"
@@ -45,7 +45,7 @@ services:
     volumes:
       - ./servers/1.21.5:/server
       - ./paper/1.21.5/paper-1.21.5.jar:/server/server.jar:ro
-      - ./plugins:/server/plugins      # writable for Paper remapper
+      # - ./plugins:/server/plugins      # writable for Paper remapper
       - ./server.properties:/server/server.properties:ro
     ports:
       - "25569:25565"
