@@ -1,0 +1,95 @@
+name: Build & Release Spigot
+
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: "Spigot versions to build"
+        required: false
+        default: "1.8.8 1.12.2 1.16.5 1.21.5"
+
+  # Automatic run every Sunday at 03:00 UTC
+  schedule:
+    - cron: "0 3 * * 0"
+
+  env:
+    DEFAULT_VERSIONS: "1.8.8 1.12.2 1.16.5 1.21.5"
+    BUILD_DIR: buildtools
+    DEST_DIR: spigot
+    BUILDTOOLS_URL: "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          VERSIONS="${{ github.event.inputs.versions || env.DEFAULT_VERSIONS }}"
+          MATRIX=$(echo "$VERSIONS" | tr ',' ' ' | xargs -n1 | jq -R -s -c 'split("\n")|map(select(length>0))')
+          echo "matrix={\"version\":$MATRIX}" >> "$GITHUB_OUTPUT"
+  
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+
+    steps:
+    # ---- 4.1 Checkout (needed for gh-release, not for BuildTools itself) ----
+    - uses: actions/checkout@v4
+
+    # ---- 4.2 Cache Maven repo (huge speed-up) ----
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: m2-${{ hashFiles('**/BuildTools.cache') }}
+        restore-keys: m2-
+    
+    # ---- 4.3 Cache BuildTools' git data & compiled class files ----
+    - name: Cache BuildTools workspace
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ env.BUILD_DIR }}
+          ~/.buildtools
+          ~/.git-refs
+        key: bt-${{ matrix.version }}
+
+    # ---- 4.4 Download / update BuildTools.jar ----
+    - name: Fetch BuildTools
+      run: |
+        mkdir -p $BUILD_DIR/${{ matrix.version }}
+        curl -sLo $BUILD_DIR/${{ matrix.version }}/BuildTools.jar "$BUILDTOOLS_URL"
+
+    # ---- 4.5 Build only Spigot (skip CraftBukkit) ----
+    - name: Build Spigot ${{ matrix.version }}
+      run: |
+        cd $BUILD_DIR/${{ matrix.version }}
+        java -jar BuildTools.jar --rev ${{ matrix.version }} --compile Spigot --output-dir "$DEST_DIR/${{ matrix.version }}"
+      env:
+        MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=30
+
+    # ---- 4.6 Upload JAR as workflow artifact (optional but handy) ----
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: spigot-${{ matrix.version }}
+        path: $DEST_DIR/${{ matrix.version }}/spigot-${{ matrix.version }}.jar
+        retention-days: 7
+
+    # ---- 4.7 Publish (or update) GitHub Release with the JAR ----
+    - name: Release upload
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: spigot-${{ matrix.version }}
+        name: Spigot ${{ matrix.version }}
+        draft: false
+        prerelease: false
+        files: $DEST_DIR/${{ matrix.version }}/spigot-${{ matrix.version }}.jar
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
