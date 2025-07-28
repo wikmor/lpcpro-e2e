@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       versions:
-        description: "Spigot versions to build"
+        description: "Spigot versions to build (space-separated or comma-separated)"
         required: false
         default: "1.8.8 1.12.2 1.16.5 1.21.5"
 
@@ -12,11 +12,9 @@ on:
   schedule:
     - cron: "0 3 * * 0"
 
-  env:
-    DEFAULT_VERSIONS: "1.8.8 1.12.2 1.16.5 1.21.5"
-    BUILD_DIR: buildtools
-    DEST_DIR: spigot
-    BUILDTOOLS_URL: "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar"
+env:
+  DEFAULT_VERSIONS: "1.8.8 1.12.2 1.16.5 1.21.5"
+  BUILDTOOLS_URL: "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar"
 
 jobs:
   prepare:
@@ -27,16 +25,16 @@ jobs:
       - id: set-matrix
         run: |
           VERSIONS="${{ github.event.inputs.versions || env.DEFAULT_VERSIONS }}"
-          MATRIX=$(echo "$VERSIONS" | tr ',' ' ' | xargs -n1 | jq -R -s -c 'split("\n")|map(select(length>0))')
-          echo "matrix={\"version\":$MATRIX}" >> "$GITHUB_OUTPUT"
-  
+          CLEANED=$(echo "$VERSIONS" | tr ',' ' ' | xargs -n1 | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "matrix={\"version\":$CLEANED}" >> "$GITHUB_OUTPUT"
+
   build:
     needs: prepare
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        version: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+        version: ${{ fromJSON(needs.prepare.outputs.matrix).version }}
 
     steps:
       - name: Checkout repository
@@ -44,23 +42,26 @@ jobs:
 
       - name: Fetch BuildTools
         run: |
-          mkdir -p $BUILD_DIR/${{ matrix.version }}
-          curl -sLo $BUILD_DIR/${{ matrix.version }}/BuildTools.jar "$BUILDTOOLS_URL"
+          mkdir -p buildtools/${{ matrix.version }}
+          curl -sLo buildtools/${{ matrix.version }}/BuildTools.jar "$BUILDTOOLS_URL"
 
       - name: Build Spigot ${{ matrix.version }}
         run: |
-          cd $BUILD_DIR/${{ matrix.version }}
-          java -jar BuildTools.jar --rev ${{ matrix.version }} --compile Spigot --output-dir "$DEST_DIR/${{ matrix.version }}"
+          mkdir -p spigot/${{ matrix.version }}
+          cd buildtools/${{ matrix.version }}
+          java -jar BuildTools.jar --rev ${{ matrix.version }} --compile Spigot
+          mv spigot-${{ matrix.version }}.jar ../../spigot/${{ matrix.version }}/
         env:
           MAVEN_OPTS: -Dmaven.wagon.httpconnectionManager.ttlSeconds=30
 
-      - name: Release upload
+      - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: spigot-${{ matrix.version }}
           name: Spigot ${{ matrix.version }}
+          body: Built automatically using BuildTools on GitHub Actions.
           draft: false
           prerelease: false
-          files: $DEST_DIR/${{ matrix.version }}/spigot-${{ matrix.version }}.jar
+          files: spigot/${{ matrix.version }}/spigot-${{ matrix.version }}.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
