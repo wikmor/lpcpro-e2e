@@ -6,13 +6,26 @@ on:
       versions:
         description: "Spigot versions to build (comma- or space-separated)"
         required: false
-        default: "1.12.2, 1.16.5, 1.21.5"
 
   schedule:
     - cron: "0 3 * * 0"  # Every Sunday at 03:00 UTC
 
 env:
-  DEFAULT_VERSIONS: "1.12.2 1.16.5 1.21.5"
+  DEFAULT_VERSIONS: |
+    1.8.8
+    1.9.4
+    1.10.2
+    1.11.2
+    1.12.2
+    1.13.2
+    1.14.4
+    1.15.2
+    1.16.5
+    1.17.1
+    1.18.2
+    1.19.4
+    1.20.4
+    1.21.8
   BUILDTOOLS_URL: "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar"
 
 jobs:
