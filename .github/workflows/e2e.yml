@@ -5,6 +5,14 @@ on:
   repository_dispatch:
     types: [run-e2e-tests]
 
+env:
+  DEFAULT_VERSIONS: |
+    1.8.8
+    1.16.5
+    1.21.4
+    1.21.5
+    1.21.8
+
 jobs:
   set-matrix:
     runs-on: ubuntu-latest
@@ -13,9 +21,16 @@ jobs:
     steps:
       - id: set
         run: |
-          VERSIONS='["1.8.8", "1.16.5", "1.21.5"]'
-          echo "matrix=$VERSIONS"
-          echo "::set-output name=matrix::{\"version\": $VERSIONS}"
+          versions=$(echo "$DEFAULT_VERSIONS" | xargs -n1 | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          engines='["paper", "spigot"]'
+
+          matrix=$(jq -n \
+            --argjson versions "$versions" \
+            --argjson engines "$engines" \
+            '[foreach $versions[] as $v ([]; .; foreach $engines[] as $e ([]; . + [{"version": $v, "engine": $e}]))) | flatten')
+
+          echo "matrix=$matrix"
+          echo "::set-output name=matrix::{\"include\":$matrix}"
 
   run-tests:
     needs: set-matrix
@@ -23,9 +38,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ${{ fromJSON(needs.set-matrix.outputs.matrix).version }}
+        include: ${{ fromJSON(needs.set-matrix.outputs.matrix).include }}
+
     env:
       VERSION: ${{ matrix.version }}
+      ENGINE: ${{ matrix.engine }}
+
     steps:
       - name: Copy repo files to host
         uses: actions/checkout@v4
@@ -42,19 +60,30 @@ jobs:
       - name: Download softdependency plugins
         run: ./scripts/download-plugins.sh
 
-      - name: Debug plugins on host
-        run: ls -lh ./plugins
-
-      - name: Download Paper
-        run: ./scripts/download-paper.sh "$VERSION"
-
-      - name: Start Paper
+      - name: Download server jar
         run: |
-          docker compose up -d paper_${VERSION//./_}
+          mkdir -p servers/$VERSION
+
+          if [[ "$ENGINE" == "paper" ]]; then
+            ./scripts/download-paper.sh "$VERSION"
+            cp ./paper/$VERSION/paper-$VERSION.jar servers/$VERSION/server.jar
+          elif [[ "$ENGINE" == "spigot" ]]; then
+            curl -fL "https://github.com/wikmor/lpcpro-e2e/releases/download/spigot-$VERSION/spigot-$VERSION.jar" \
+              -o servers/$VERSION/spigot-$VERSION.jar
+            cp servers/$VERSION/spigot-$VERSION.jar servers/$VERSION/server.jar
+          else
+            echo "Unknown engine: $ENGINE"
+            exit 1
+          fi
+
+      - name: Start ${{ matrix.engine }} ${{ matrix.version }}
+        run: |
+          docker compose up -d ${ENGINE}_${VERSION//./_}
           ./scripts/wait-for-server.sh servers/${VERSION}/logs/latest.log
 
       - name: Debug logs on host
         run: cat servers/${VERSION}/logs/latest.log || echo "Log not found"
 
       - name: Run tests
-        run: docker compose run --rm test_${VERSION//./_}
+        run: |
+          docker compose run --rm --no-deps test_${VERSION//./_}

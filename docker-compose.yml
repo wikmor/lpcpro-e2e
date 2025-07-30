@@ -1,7 +1,4 @@
 services:
-  # ------------------------------------------------------------------ #
-  # Paper 1.8.8 server                                                #
-  # ------------------------------------------------------------------ #
   paper_1_8_8:
     build:
       context: .
@@ -16,9 +13,20 @@ services:
     ports:
       - "25567:25565"
 
-  # ------------------------------------------------------------------ #
-  # Paper 1.16.5 server                                                #
-  # ------------------------------------------------------------------ #
+  spigot_1_8_8:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAVA_VERSION: 11
+    volumes:
+      - ./servers/1.8.8:/server
+      - ./spigot/1.8.8/spigot-1.8.8.jar:/server/server.jar:ro
+      - ./plugins:/server/plugins
+      - ./server.properties:/server/server.properties:ro
+    ports:
+      - "25567:25565"
+
   paper_1_16_5:
     build:
       context: .
@@ -33,9 +41,20 @@ services:
     ports:
       - "25567:25565"
 
-  # ------------------------------------------------------------------ #
-  # Paper 1.21.5 server                                                #
-  # ------------------------------------------------------------------ #
+  spigot_1_16_5:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAVA_VERSION: 16
+    volumes:
+      - ./servers/1.16.5:/server
+      - ./spigot/1.16.5/spigot-1.16.5.jar:/server/server.jar:ro
+      - ./plugins:/server/plugins
+      - ./server.properties:/server/server.properties:ro
+    ports:
+      - "25567:25565"
+
   paper_1_21_5:
     build:
       context: .
@@ -50,38 +69,41 @@ services:
     ports:
       - "25569:25565"
 
+  spigot_1_21_5:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAVA_VERSION: 21
+    volumes:
+      - ./servers/1.21.5:/server
+      - ./spigot/1.21.5/spigot-1.21.5.jar:/server/server.jar:ro
+      - ./plugins:/server/plugins
+      - ./server.properties:/server/server.properties:ro
+    ports:
+      - "25567:25565"
+
   test_1_8_8:
     build: {context: ., dockerfile: Dockerfile.test}
-    depends_on: [paper_1_8_8]
     volumes:
-      - ./servers/1.8.8/logs:/logs:ro
+      - ./servers/1.8.8/logs:/logs:ro # TODO: Where is /servers? Couldn't be simplified to only one test service, not multiple test_VERSION?
       - ./tests:/tests
     environment: {LOG_PATH: /logs/latest.log}
 
-  # ------------------------------------------------------------------ #
-  # Test container for 1.16.5                                          #
-  # ------------------------------------------------------------------ #
   test_1_16_5:
     build:
       context: .
       dockerfile: Dockerfile.test
-    depends_on:
-      - paper_1_16_5
     volumes:
       - ./servers/1.16.5/logs:/logs:ro
       - ./tests:/tests
     environment:
       - LOG_PATH=/logs/latest.log
 
-  # ------------------------------------------------------------------ #
-  # Test container for 1.21.5                                          #
-  # ------------------------------------------------------------------ #
   test_1_21_5:
     build:
       context: .
       dockerfile: Dockerfile.test
-    depends_on:
-      - paper_1_21_5
     volumes:
       - ./servers/1.21.5/logs:/logs:ro
       - ./tests:/tests
