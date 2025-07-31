@@ -21,7 +21,7 @@ jobs:
     steps:
       - id: set
         run: |
-          matrix=$(jq -n --arg versions "$DEFAULT_VERSIONS" '
+          matrix=$(jq -c -n --arg versions "$DEFAULT_VERSIONS" '
             def versions: ($versions | split("\n") | map(. | gsub(","; "") | gsub(" "; "") | select(length > 0)));
             def engines: ["paper", "spigot"];
             [
@@ -30,7 +30,6 @@ jobs:
               {version: $v, engine: $e}
             ]
           ')
-          echo "matrix=$matrix"
           echo "matrix={\"include\":$matrix}" >> "$GITHUB_OUTPUT"
 
   run-tests:
