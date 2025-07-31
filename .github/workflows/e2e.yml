@@ -26,8 +26,13 @@ jobs:
 
           matrix=$(jq -n \
             --argjson versions "$versions" \
-            --argjson engines "$engines" \
-            '[foreach $versions[] as $v ([]; .; foreach $engines[] as $e ([]; . + [{"version": $v, "engine": $e}]))) | flatten')
+            --argjson engines "$engines" '
+              [
+                versions[] as $v |
+                engines[] as $e |
+                {version: $v, engine: $e}
+              ]
+            ')
 
           echo "matrix=$matrix"
           echo "::set-output name=matrix::{\"include\":$matrix}"
