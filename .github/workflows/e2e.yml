@@ -39,11 +39,9 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.set-matrix.outputs.matrix).include }}
-
     env:
       VERSION: ${{ matrix.version }}
       ENGINE: ${{ matrix.engine }}
-
     steps:
       - name: Copy repo files to host
         uses: actions/checkout@v4
@@ -62,28 +60,25 @@ jobs:
 
       - name: Download server jar
         run: |
-          mkdir -p servers/$VERSION
-
+          mkdir -p ./server-jars/${ENGINE}
           if [[ "$ENGINE" == "paper" ]]; then
             ./scripts/download-paper.sh "$VERSION"
-            cp ./paper/$VERSION/paper-$VERSION.jar servers/$VERSION/server.jar
-          elif [[ "$ENGINE" == "spigot" ]]; then
-            curl -fL "https://github.com/wikmor/lpcpro-e2e/releases/download/spigot-$VERSION/spigot-$VERSION.jar" \
-              -o servers/$VERSION/spigot-$VERSION.jar
-            cp servers/$VERSION/spigot-$VERSION.jar servers/$VERSION/server.jar
+            mv "./paper/$VERSION/paper-$VERSION.jar" "./server-jars/$ENGINE/$VERSION.jar"
           else
-            echo "Unknown engine: $ENGINE"
-            exit 1
+            curl -sLo "./server-jars/$ENGINE/$VERSION.jar" \
+              "https://github.com/wikmor/lpcpro-e2e/releases/download/spigot-$VERSION/spigot-$VERSION.jar"
           fi
 
-      - name: Start ${{ matrix.engine }} ${{ matrix.version }}
+      - name: Generate Docker Compose file
+        run: ./scripts/gen-compose.sh "$VERSION" "$ENGINE" > docker-compose.yml
+
+      - name: Start server
         run: |
           docker compose up -d ${ENGINE}_${VERSION//./_}
           ./scripts/wait-for-server.sh servers/${VERSION}/logs/latest.log
 
-      - name: Debug logs on host
+      - name: Show logs
         run: cat servers/${VERSION}/logs/latest.log || echo "Log not found"
 
       - name: Run tests
-        run: |
-          docker compose run --rm --no-deps test_${VERSION//./_}
+        run: docker compose run --rm --no-deps test_${VERSION//./_}
