@@ -65,8 +65,14 @@ jobs:
             ./scripts/download-paper.sh "$VERSION"
             mv "./paper/$VERSION/paper-$VERSION.jar" "./server-jars/$ENGINE/$VERSION.jar"
           else
-            curl -sLo "./server-jars/$ENGINE/$VERSION.jar" \
-              "https://github.com/wikmor/lpcpro-e2e/releases/download/spigot-$VERSION/spigot-$VERSION.jar"
+            URL="https://github.com/wikmor/lpcpro-e2e/releases/download/spigot-$VERSION/spigot-$VERSION.jar"
+            echo "Checking if Spigot jar exists: $URL"
+            if curl --head --fail --silent "$URL" > /dev/null; then
+              curl -sLo "./server-jars/$ENGINE/$VERSION.jar" "$URL"
+            else
+              echo "❌ Spigot $VERSION jar not found in releases!"
+              exit 1
+            fi
           fi
 
       - name: Generate Docker Compose file
