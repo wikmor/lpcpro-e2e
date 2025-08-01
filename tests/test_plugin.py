@@ -12,3 +12,4 @@ def test_plugin_enabled():
     assert "Done (" in content, "❌ Server did not finish startup"
     assert "LPC-Pro" in content, "📦 LPC-Pro not mentioned in logs"
     assert "Error occurred while enabling LPC-Pro" not in content, "❌ Plugin failed to load"
+    assert "Exception" not in content, "❌ Exception found in logs"
