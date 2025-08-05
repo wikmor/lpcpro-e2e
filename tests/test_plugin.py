@@ -1,26 +1,85 @@
 import os
-import time
 import pathlib
-import pytest
+
+# Versions with partially bundled Adventure libraries
+EXPECTED_LIBRARIES = {
+    "1.16.5": [
+        "adventure-platform-bukkit",
+        "adventure-api",
+        "adventure-text-serializer-plain",
+        "adventure-text-serializer-gson",
+        "adventure-text-serializer-legacy",
+        "adventure-text-serializer-bungeecord",
+        "adventure-text-minimessage"
+    ],
+    "1.17.1": [
+        "adventure-platform-bukkit",
+        "adventure-api",
+        "adventure-text-serializer-plain",
+        "adventure-text-serializer-gson",
+        "adventure-text-serializer-legacy",
+        "adventure-text-serializer-bungeecord",
+        "adventure-text-minimessage"
+    ],
+    "1.18.2": [
+        "adventure-platform-bukkit",
+        "adventure-text-serializer-bungeecord",
+        "adventure-text-minimessage"
+    ],
+    "1.19.4": [
+        "adventure-platform-bukkit",
+        "adventure-text-serializer-bungeecord",
+        "adventure-text-minimessage"
+    ],
+    "1.20.6": [
+        "adventure-platform-bukkit",
+        "adventure-text-serializer-bungeecord",
+        "adventure-text-minimessage"
+    ],
+    "1.21.8": [
+        "adventure-platform-bukkit",
+        "adventure-text-serializer-bungeecord",
+        "adventure-text-minimessage"
+    ],
+}
+
+# Full list of Adventure libraries (assert all if not partially bundled)
+ALL_ADVENTURE_LIBS = [
+    "adventure-platform-bukkit",
+    "adventure-api",
+    "adventure-text-serializer-plain",
+    "adventure-text-serializer-gson",
+    "adventure-text-serializer-legacy",
+    "adventure-text-serializer-bungeecord",
+    "adventure-text-minimessage"
+]
 
 def test_plugin_enabled():
-    log_path = pathlib.Path("/logs/latest.log")
-
+    log_path = pathlib.Path(os.getenv("LOG_PATH", "/logs/latest.log"))
     assert log_path.exists(), "❌ Log file does not exist"
+
     content = log_path.read_text(encoding="utf-8", errors="ignore")
 
-    # Test if libraries folder which is in the main server's folder is not missing
-    # libraries_path = pathlib.Path("/libraries")
-    # assert libraries_path.exists(), "❌ Libraries folder does not exist"
+    version = os.getenv("MC_VERSION", "")
+    engine = os.getenv("MC_ENGINE", "").lower()
 
-    assert "Downloading library adventure-platform-bukkit-" in content, "❌ Adventure Platform Bukkit library not found in logs"
-    assert "Downloading library adventure-api-" in content, "❌ Adventure API library not found in logs"
-    assert "Downloading library adventure-text-serializer-plain-" in content, "❌ Adventure Text Serializer Plain library not found in logs"
-    assert "Downloading library adventure-text-serializer-gson-" in content, "❌ Adventure Text Serializer Gson library not found in logs"
-    assert "Downloading library adventure-text-serializer-legacy-" in content, "❌ Adventure Text Serializer Legacy library not found in logs"
-    assert "Downloading library adventure-text-serializer-bungeecord-" in content, "❌ Adventure Text Serializer BungeeCord library not found in logs"
-    assert "Downloading library adventure-text-minimessage-" in content, "❌ Adventure Text Minimessage library not found in logs"
+    def assert_libs_present(expected_libs):
+        for lib in expected_libs:
+            assert f"Downloading library {lib}-" in content, f"❌ Expected download of {lib} in {engine} {version}"
 
+    if engine == "paper":
+        if version in EXPECTED_LIBRARIES:
+            assert_libs_present(EXPECTED_LIBRARIES[version])
+        else:
+            # For older versions (<1.16.5), assume none are bundled
+            assert_libs_present(ALL_ADVENTURE_LIBS)
+    elif engine == "spigot":
+        # Always expect all Adventure libs for Spigot
+        assert_libs_present(ALL_ADVENTURE_LIBS)
+    else:
+        raise AssertionError(f"❌ Unknown engine: {engine}")
+
+    # Always validate server started and plugin loaded
     assert "Done (" in content, "❌ Server did not finish startup"
     assert "LPC-Pro" in content, "❌ LPC-Pro not mentioned in logs"
     assert "Error occurred while enabling LPC-Pro" not in content, "❌ Plugin failed to load"

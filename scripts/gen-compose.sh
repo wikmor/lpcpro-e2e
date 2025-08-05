@@ -45,4 +45,6 @@ services:
       - ./tests:/tests
     environment:
       - LOG_PATH=/logs/latest.log
+      - MC_VERSION=${VERSION}
+      - MC_ENGINE=${ENGINE}
 EOF
