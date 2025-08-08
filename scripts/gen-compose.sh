@@ -32,7 +32,7 @@ services:
       - ./plugins:/server/plugins
       - ./server.properties:/server/server.properties:ro
       - ./bukkit.yml:/server/bukkit.yml:ro
-      - ./world:/server/world:ro
+      - ./world:/server/world
     ports:
       - "${PORT}:25565"
 
