@@ -12,7 +12,7 @@ if [[ "$VERSION" == 1.8.* || "$VERSION" == 1.9.* || "$VERSION" == 1.10.* || "$VE
 elif [[ "$VERSION" == 1.16.* ]]; then
   JAVA_VER=16
 elif [[ "$VERSION" == 1.17.* || "$VERSION" == 1.18.* || "$VERSION" == 1.19.* || "$VERSION" == 1.20.* ]]; then
-  JAVA_VER=17
+  JAVA_VER=21
 else
   JAVA_VER=21
 fi
