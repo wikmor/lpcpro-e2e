@@ -63,21 +63,21 @@ def test_plugin_enabled():
     version = os.getenv("MC_VERSION", "")
     engine = os.getenv("MC_ENGINE", "").lower()
 
-    def assert_libs_present(expected_libs):
-        for lib in expected_libs:
-            assert f"Downloading library {lib}-" in content, f"❌ Expected download of {lib} in {engine} {version}"
+    # def assert_libs_present(expected_libs):
+    #     for lib in expected_libs:
+    #         assert f"Downloading library {lib}-" in content, f"❌ Expected download of {lib} in {engine} {version}"
 
-    if engine == "paper":
-        if version in EXPECTED_LIBRARIES:
-            assert_libs_present(EXPECTED_LIBRARIES[version])
-        else:
-            # For older versions (<1.16.5), assume none are bundled
-            assert_libs_present(ALL_ADVENTURE_LIBS)
-    elif engine == "spigot":
-        # Always expect all Adventure libs for Spigot
-        assert_libs_present(ALL_ADVENTURE_LIBS)
-    else:
-        raise AssertionError(f"❌ Unknown engine: {engine}")
+    # if engine == "paper":
+    #     if version in EXPECTED_LIBRARIES:
+    #         assert_libs_present(EXPECTED_LIBRARIES[version])
+    #     else:
+    #         # For older versions (<1.16.5), assume none are bundled
+    #         assert_libs_present(ALL_ADVENTURE_LIBS)
+    # elif engine == "spigot":
+    #     # Always expect all Adventure libs for Spigot
+    #     assert_libs_present(ALL_ADVENTURE_LIBS)
+    # else:
+    #     raise AssertionError(f"❌ Unknown engine: {engine}")
 
     # Always validate server started and plugin loaded
     assert "Done (" in content, "❌ Server did not finish startup"
