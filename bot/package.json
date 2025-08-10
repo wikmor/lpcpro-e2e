@@ -3,7 +3,10 @@
     "private": true,
     "type": "module",
     "dependencies": {
-      "mineflayer": "^4.17.0"
+      "mineflayer": "latest",
+      "minecraft-protocol": "latest",
+      "minecraft-data": "latest",
+      "prismarine-chat": "latest"
     }
   }
   
