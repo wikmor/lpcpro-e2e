@@ -1,6 +1,6 @@
 default:
   rank:
-    text: "&7[&bPro&7]"
+    text: "[Pro]"
   player:
     text: "{player}"
   divider:
