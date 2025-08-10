@@ -1,0 +1,9 @@
+{
+    "name": "lpcpro-e2e-bot",
+    "private": true,
+    "type": "module",
+    "dependencies": {
+      "mineflayer": "^4.17.0"
+    }
+  }
+  

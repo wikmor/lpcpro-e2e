@@ -4,15 +4,11 @@ set -e
 VERSION="$1"
 ENGINE="$2"
 VERSION_SAFE="${VERSION//./_}"
-PORT=$((25560 + RANDOM % 100))  # Avoid port conflicts, is it even necessary if containerized?
+PORT=$((25560 + RANDOM % 100))  # Avoid collisions
 
-# Determine Java version
-if [[ "$VERSION" == 1.8.* || "$VERSION" == 1.9.* || "$VERSION" == 1.10.* || "$VERSION" == 1.11.* || "$VERSION" == 1.12.* || "$VERSION" == 1.13.* || "$VERSION" == 1.14.* || "$VERSION" == 1.15.* ]]; then
-  JAVA_VER=11
-elif [[ "$VERSION" == 1.16.* ]]; then
-  JAVA_VER=16
-elif [[ "$VERSION" == 1.17.* || "$VERSION" == 1.18.* || "$VERSION" == 1.19.* || "$VERSION" == 1.20.* ]]; then
-  JAVA_VER=21
+# Java per version (1.19+ → 17, 1.21+ → 21)
+if [[ "$VERSION" == 1.19.* || "$VERSION" == 1.20.* ]]; then
+  JAVA_VER=17
 else
   JAVA_VER=21
 fi
@@ -31,7 +27,7 @@ services:
       - ./server-jars/${ENGINE}/${VERSION}.jar:/server/server.jar:ro
       - ./plugins:/server/plugins
       - ./server.properties:/server/server.properties:ro
-      - ./bukkit.yml:/server/bukkit.yml
+      - ./formats:/server/plugins/LPC-Pro/formats:ro
     ports:
       - "${PORT}:25565"
 
@@ -48,4 +44,20 @@ services:
       - LOG_PATH=/logs/latest.log
       - MC_VERSION=${VERSION}
       - MC_ENGINE=${ENGINE}
+
+  bot_${VERSION_SAFE}:
+    image: node:20-alpine
+    working_dir: /app
+    depends_on:
+      - ${ENGINE}_${VERSION_SAFE}
+    volumes:
+      - ./bot:/app:ro
+    command: sh -c "npm ci --silent && node bot.js"
+    environment:
+      - MC_HOST=${ENGINE}_${VERSION_SAFE}
+      - MC_PORT=25565
+      - BOT_USERNAME=EnderBot_${VERSION_SAFE}
+      - CHAT_MESSAGE=e2e hello
+      - EXPECTED_REGEX=\${EXPECTED_REGEX}
+      - LISTEN_TIMEOUT_MS=15000
 EOF

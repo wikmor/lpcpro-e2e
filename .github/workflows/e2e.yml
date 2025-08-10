@@ -72,6 +72,13 @@ jobs:
             fi
           fi
 
+      - name: Build expected chat regex
+        id: expect
+        run: |
+          REGEX=$(./scripts/expected_from_formats.py "./formats/formats.yml" "EnderBot_${VERSION//./_}" "e2e hello")
+          if [ -z "$REGEX" ]; then echo "Empty regex"; exit 1; fi
+          echo "EXPECTED_REGEX=$REGEX" >> "$GITHUB_ENV"
+
       - name: Generate Docker Compose file
         run: ./scripts/gen-compose.sh "$VERSION" "$ENGINE" > docker-compose.yml
 
@@ -79,6 +86,10 @@ jobs:
         run: |
           docker compose up -d ${ENGINE}_${VERSION//./_}
           ./scripts/wait-for-server.sh servers/${VERSION}/logs/latest.log
+
+      - name: Run chat bot and assert formatted message
+        run: |
+          EXPECTED_REGEX="$EXPECTED_REGEX" docker compose run --rm --no-deps bot_${VERSION//./_}
 
       - name: Show logs
         run: cat servers/${VERSION}/logs/latest.log || echo "Log not found"

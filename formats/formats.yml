@@ -1,0 +1,9 @@
+default:
+  rank:
+    text: "&7[&bPro&7]"
+  player:
+    text: "{player}"
+  divider:
+    text: " » "
+  message:
+    text: "{message}"
