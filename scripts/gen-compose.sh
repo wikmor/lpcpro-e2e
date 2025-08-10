@@ -58,5 +58,7 @@ services:
       - CHAT_MESSAGE=e2e hello
       - EXPECTED_REGEX=\${EXPECTED_REGEX}
       - LISTEN_TIMEOUT_MS=15000
+      - PREFER_SYSTEM_CHAT=true
+      - BOT_DEBUG=false
     command: sh -c "npm install --silent --no-audit --no-fund && node bot.js"
 EOF
