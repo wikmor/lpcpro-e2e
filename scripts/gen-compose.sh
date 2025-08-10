@@ -14,7 +14,6 @@ else
 fi
 
 cat <<EOF
-version: '3.8'
 services:
   ${ENGINE}_${VERSION_SAFE}:
     build:
@@ -51,8 +50,7 @@ services:
     depends_on:
       - ${ENGINE}_${VERSION_SAFE}
     volumes:
-      - ./bot:/app:ro
-    command: sh -c "npm ci --silent && node bot.js"
+      - ./bot:/app
     environment:
       - MC_HOST=${ENGINE}_${VERSION_SAFE}
       - MC_PORT=25565
@@ -60,4 +58,5 @@ services:
       - CHAT_MESSAGE=e2e hello
       - EXPECTED_REGEX=\${EXPECTED_REGEX}
       - LISTEN_TIMEOUT_MS=15000
+    command: sh -c "npm install --silent --no-audit --no-fund && node bot.js"
 EOF
