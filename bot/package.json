@@ -6,7 +6,8 @@
       "mineflayer": "latest",
       "minecraft-protocol": "latest",
       "minecraft-data": "latest",
-      "prismarine-chat": "latest"
+      "prismarine-chat": "latest",
+      "prismarine-nbt": "latest"
     }
   }
   
