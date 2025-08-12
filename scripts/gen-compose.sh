@@ -26,7 +26,6 @@ services:
       - ./server-jars/${ENGINE}/${VERSION}.jar:/server/server.jar:ro
       - ./plugins:/server/plugins
       - ./server.properties:/server/server.properties:ro
-      - ./formats:/server/plugins/LPC-Pro/formats:ro
     ports:
       - "${PORT}:25565"
 
