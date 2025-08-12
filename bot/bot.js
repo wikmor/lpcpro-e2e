@@ -1,4 +1,4 @@
-// bot/bot.js — 1.19+ robust chat capture (handles NBT in system_chat)
+// bot/bot.js — 1.19+ robust chat capture (arrays/NBT-safe + JSON emit)
 import mineflayer from 'mineflayer';
 import * as nbt from 'prismarine-nbt';
 
@@ -23,42 +23,58 @@ function toComponentObject(c) {
   if (!c) return { text: '' };
   if (typeof c === 'string') return { text: c };
 
-  // Already a component?
+  // Array of components → treat as {text:"", extra:[...]}
+  if (Array.isArray(c)) return { text: '', extra: c };
+
+  // Already a (likely) component?
   if (c.text != null || c.translate != null || c.extra != null) return c;
 
-  // system_chat on some versions: NBT Chat component
+  // system_chat on some 1.21 builds: NBT compound holding chat component
   if (typeof c === 'object' && c.type === 'compound' && c.value) {
     try {
-      const simplified = nbt.simplify(c); // -> plain JS object
-      // Sometimes simplified is like {text:"...", extra:[...]} — perfect.
-      return (simplified && (simplified.text != null || simplified.translate != null || simplified.extra != null))
-        ? simplified
-        : { text: String(simplified) };
+      const simplified = nbt.simplify(c); // plain JS
+      if (simplified && (simplified.text != null || simplified.translate != null || simplified.extra != null)) {
+        return simplified;
+      }
+      return { text: String(simplified) };
     } catch (e) {
       if (DEBUG) console.log('DBG NBT simplify error:', e);
       return { text: '<<invalid-nbt>>' };
     }
   }
 
-  // Fallback: stringify unknown
+  // Fallback: stringify unknown object
   return { text: String(c) };
 }
 
 // Flatten Mojang/Adventure component → plain text
 function flat(comp) {
+  // Handle arrays BEFORE normalization to avoid "[object Object],..."
+  if (Array.isArray(comp)) return comp.map(flat).join('');
+  if (typeof comp === 'string') return comp;
+
   const c = toComponentObject(comp);
   if (!c) return '';
-  if (typeof c === 'string') return c;
-  if (Array.isArray(c)) return c.map(flat).join('');
 
   let out = '';
+
+  // text node
   if (c.text != null) out += String(c.text);
+
+  // translation node: join arguments human-readably
   if (c.translate) {
     const withArr = c.with || [];
-    out += (withArr.map(flat).join(' '));
+    out += withArr.map(flat).join(' ');
   }
+
+  // extra children
   if (c.extra) out += flat(c.extra);
-  return out || Object.values(c).map(flat).join('');
+
+  // last resort: join unknown fields' flattened values
+  if (!out && typeof c === 'object') {
+    out = Object.values(c).map(flat).join('');
+  }
+  return out;
 }
 
 function emitPacketJson(tag, comp) {
@@ -77,6 +93,10 @@ let matched = false;
 let sawSystem = false;
 let sawPlayer = false;
 
+function safeDump(obj) {
+  try { return JSON.stringify(obj); } catch { return String(obj); }
+}
+
 function tryMatch(comp, source, rawDump) {
   const line = flat(comp);
   if (DEBUG) {
@@ -86,7 +106,7 @@ function tryMatch(comp, source, rawDump) {
     console.log(`ℹ️ Chat (${source}): "${line}"`);
   }
 
-  // Always emit a comparable JSON snapshot for E2E (base64)
+  // Always emit JSON snapshot from system_chat for strict JSON comparison
   if (source === 'system_chat') emitPacketJson('E2E_PACKET_JSON', comp);
 
   if (!matched && re.test(line)) {
@@ -97,17 +117,16 @@ function tryMatch(comp, source, rawDump) {
 }
 
 bot.once('spawn', () => {
-  // tiny delay so the server is quiet
   setTimeout(() => bot.chat(CHAT_MESSAGE), 1200);
 
-  // Fully formatted messages (what we want for E2E JSON + regex)
+  // Fully formatted messages (preferred for E2E)
   bot._client.on('system_chat', (p) => {
     sawSystem = true;
     const content = p?.content ?? '';
     tryMatch(content, 'system_chat', safeDump(p));
   });
 
-  // Player chat packet (often missing full formatting)
+  // Player chat packet
   bot._client.on('player_chat', (p) => {
     sawPlayer = true;
     const candidates = [
@@ -118,6 +137,7 @@ bot.once('spawn', () => {
     ].filter(Boolean);
 
     if (candidates.length === 0 && (p?.name || p?.plainMessage)) {
+      // Synthesize vanilla-like "<name> message" if needed
       const synth = { translate: 'chat.type.text', with: [{ text: p.name || '' }, { text: p.plainMessage || '' }] };
       candidates.push(synth);
     }
@@ -134,7 +154,6 @@ bot.once('spawn', () => {
     }
   });
 
-  // Timeout
   setTimeout(() => {
     let hint = 'No matching chat seen.';
     if (PREFER_SYSTEM_CHAT && sawPlayer && !sawSystem) {
@@ -147,8 +166,3 @@ bot.once('spawn', () => {
 bot.on('kicked', (r) => die(`❌ Bot kicked: ${r}`));
 bot.on('end', () => { if (!matched) die('❌ Disconnected before match', 1); });
 bot.on('error', (e) => die(`❌ Bot error: ${e}`, 1));
-
-// Safe JSON stringify (handles circular / BigInt issues)
-function safeDump(obj) {
-  try { return JSON.stringify(obj); } catch { return String(obj); }
-}
