@@ -6,8 +6,11 @@ ENGINE="$2"
 VERSION_SAFE="${VERSION//./_}"
 PORT=$((25560 + RANDOM % 100))  # Avoid collisions
 
-# Java per version (1.19+ → 17, 1.21+ → 21)
-if [[ "$VERSION" == 1.19.* || "$VERSION" == 1.20.* ]]; then
+if [[ "$VERSION" == 1.8.* || "$VERSION" == 1.9.* || "$VERSION" == 1.10.* || "$VERSION" == 1.11.* || "$VERSION" == 1.12.* || "$VERSION" == 1.13.* || "$VERSION" == 1.14.* || "$VERSION" == 1.15.* ]]; then
+  JAVA_VER=11
+elif [[ "$VERSION" == 1.16.* ]]; then
+  JAVA_VER=16
+elif [[ "$VERSION" == 1.17.* || "$VERSION" == 1.18.* || "$VERSION" == 1.19.* || "$VERSION" == 1.20.* ]]; then
   JAVA_VER=17
 else
   JAVA_VER=21
