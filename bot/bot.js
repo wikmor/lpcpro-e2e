@@ -159,6 +159,20 @@ bot.once('spawn', () => {
     }
   });
 
+  // Legacy/unified chat packet (≤1.19.2 and some server impls)
+  bot._client.on('chat', (p) => {
+    // p.message is usually the component; sometimes it's a string
+    const comp = p?.message ?? '';
+    tryMatch(comp, 'chat', safeDump(p));
+  });
+
+  // 1.19.3 server-decorated messages (client renders like player chat)
+  bot._client.on('disguised_chat', (p) => {
+    // typical fields: p.message (component) and p.sender (UUID), p.type…
+    const comp = p?.message ?? p?.content ?? '';
+    tryMatch(comp, 'disguised_chat', safeDump(p));
+  });
+
   setTimeout(() => {
     let hint = 'No matching chat seen.';
     if (PREFER_SYSTEM_CHAT && sawPlayer && !sawSystem) {
